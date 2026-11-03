@@ -1,2 +1,1 @@
-# distributed-systems-project
-testi push
+# Distributed Systems Project
