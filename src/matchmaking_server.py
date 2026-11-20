@@ -7,6 +7,7 @@ SERVER_PORT = 8000
 
 rooms = {}
 room_id = 1
+next_peer_id = 1
 
 
 async def handle_connection(websocket):
@@ -20,14 +21,29 @@ async def handle_connection(websocket):
 
 
 def join_room(host, port):
+    global room_id
+    global next_peer_id
+
     if room_id not in rooms:
         rooms[room_id] = []
+
     role = "leader" if len(rooms[room_id]) == 0 else "follower"
-    rooms[room_id].append({"role": role, "host": host, "port": port})
+
+    peer = {
+        "role": role,
+        "host": host,
+        "port": port,
+        "peer_id": next_peer_id
+    }
+    rooms[room_id].append(peer)
+
+    next_peer_id += 1
+
     return {
         "room_id": room_id,
-        "peers": rooms[room_id],
-        "status": "connected"
+        "role": role,
+        "peer_id": next_peer_id - 1,
+        "peers": rooms[room_id]
     }
 
 
