@@ -15,21 +15,66 @@ class Peer:
         self.port = port
         self.peer_id = None
         self.room_id = None
-        self.role = None
+        self.role = None  # leader, follower
+
+        # List of peers in the same room (role, host, port, peer_id)
         self.peers = []
+        self.status = "connecting"  # connecting, connected, disconnected
+        self.connections = {}  # peer_id -> websocket connection
+        self.game_state = {
+            "sequence_number": 0,
+            "players": {},
+            "snowballs": [],
+        }
+
+    def add_player(self, peer_id):
+        self.game_state["players"][str(peer_id)] = {
+            "x": 100,
+            "y": 100,
+            "hearts": 3,
+            "score": 0,
+            "state": "playing",
+        }
 
     async def receive_messages(self, websocket):
         async for message in websocket:
-            print("Received:", message)
+            data = json.loads(message)
+            print("Received:", data)
+
+            if data["action"] == "hello":
+                peer_id = data["peer_id"]
+                self.connections[peer_id] = websocket
+
+                if self.role == "leader":
+                    self.add_player(peer_id)
+                    self.game_state["sequence_number"] += 1
+                    await self.broadcast_game_state()
+
+            elif data["action"] == "update":
+                if self.role == "follower":
+                    self.game_state = data["game_state"]
+                    print("Game state:", self.game_state)
+
+    async def broadcast_game_state(self):
+        message = json.dumps({
+            "action": "update",
+            "game_state": self.game_state,
+        })
+
+        for websocket in self.connections.values():
+            await websocket.send(message)
 
     async def connect_to_peer(self, peer):
         address = f"ws://{peer['host']}:{peer['port']}"
 
         async with connect(address) as websocket:
+            self.connections[peer["peer_id"]] = websocket
+
             await websocket.send(json.dumps({
                 "action": "hello",
                 "peer_id": self.peer_id,
             }))
+
             await self.receive_messages(websocket)
 
     async def run(self):
@@ -48,6 +93,10 @@ class Peer:
                 self.room_id = response["room_id"]
                 self.role = response["role"]
                 self.peers = response["peers"]
+                self.status = "connected"
+
+                if self.role == "leader":
+                    self.add_player(self.peer_id)
 
                 tasks = [self.receive_messages(websocket)]
 
