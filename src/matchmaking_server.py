@@ -1,56 +1,59 @@
 import asyncio
 import json
+
 from websockets.asyncio.server import serve
 
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 8000
 
-rooms = {}
-room_id = 1
-next_peer_id = 1
+class MatchmakingServer:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.rooms = {}
+        self.room_id = 1
+        self.next_peer_id = 1
+
+    async def handle_connection(self, websocket):
+        async for message in websocket:
+            data = json.loads(message)
+            print("Received:", data)
+
+            if data["action"] == "connect":
+                response = self.join_room(data["host"], data["port"])
+                await websocket.send(json.dumps(response))
+
+    def join_room(self, host, port):
+        if self.room_id not in self.rooms:
+            self.rooms[self.room_id] = []
+
+        room = self.rooms[self.room_id]
+        existing_peers = room.copy()
+        role = "leader" if len(room) == 0 else "follower"
+
+        peer = {
+            "role": role,
+            "host": host,
+            "port": port,
+            "peer_id": self.next_peer_id,
+        }
+
+        room.append(peer)
+        self.next_peer_id += 1
+
+        return {
+            "room_id": self.room_id,
+            "role": role,
+            "peer_id": peer["peer_id"],
+            "peers": existing_peers,
+        }
+
+    async def run(self):
+        async with serve(
+            self.handle_connection, self.host, self.port
+        ) as server:
+            print(f"Server running at ws://{self.host}:{self.port}")
+            await server.serve_forever()
 
 
-async def handle_connection(websocket):
-    async for message in websocket:
-        data = json.loads(message)
-        print("Received:", data)
-
-        if data["action"] == "connect":
-            response = join_room(data["host"], data["port"])
-            await websocket.send(json.dumps(response))
-
-
-def join_room(host, port):
-    global room_id
-    global next_peer_id
-
-    if room_id not in rooms:
-        rooms[room_id] = []
-
-    role = "leader" if len(rooms[room_id]) == 0 else "follower"
-
-    peer = {
-        "role": role,
-        "host": host,
-        "port": port,
-        "peer_id": next_peer_id
-    }
-    rooms[room_id].append(peer)
-
-    next_peer_id += 1
-
-    return {
-        "room_id": room_id,
-        "role": role,
-        "peer_id": next_peer_id - 1,
-        "peers": rooms[room_id]
-    }
-
-
-async def main():
-    async with serve(handle_connection, SERVER_IP, SERVER_PORT) as server:
-        print(f"Server running at ws://{SERVER_IP}:{SERVER_PORT}")
-        await server.serve_forever()
-
-
-asyncio.run(main())
+if __name__ == "__main__":
+    server = MatchmakingServer("127.0.0.1", 8000)
+    asyncio.run(server.run())
