@@ -67,17 +67,8 @@ class Peer:
 
         print("-" * 60, flush=True)
 
-
-    async def submit_player_input(self, id, x, y): 
-        print("submit player input", x,y,id)
-
-        #player_input = {
-        #    "x": x,
-         #   "y": y
-        #}
-
-        #await self.handle_player_input(id, player_input)
-
+    async def submit_player_input(self, id, x, y):
+        print("submit player input", x, y, id)
 
     def process_input(self, peer_id, player_input):
         player = self.game_state["players"][str(peer_id)]
@@ -214,10 +205,6 @@ class Peer:
                     self.add_player(self.peer_id)
                     self.print_game_state()
                     tasks.append(self.ui.run(self))
-
-
-
-
 
                 for peer in self.peers:
                     tasks.append(self.connect_to_peer(peer))

@@ -1,7 +1,5 @@
 import asyncio
 import pygame
-#import pygame requirements.txt fileen?
-
 
 
 class GameUI():
@@ -40,15 +38,9 @@ class GameUI():
 
         pygame.display.flip()
 
-
-
-    async def motion(self, peer, x,y):
+    async def motion(self, peer, x, y):
 
         await peer.submit_player_input(peer.peer_id, x, y)
-
-                
-
-
 
     async def run(self, peer):
         while self.running:
@@ -58,5 +50,3 @@ class GameUI():
             await asyncio.sleep(0)
 
         pygame.quit()
-
-
