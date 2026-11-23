@@ -1,31 +1,62 @@
+import asyncio
 import pygame
 #import pygame requirements.txt fileen?
 
-pygame.init()
 
-screen = pygame.display.set_mode((1920, 1080))
-clock = pygame.time.Clock()
 
-player_x = 1920 // 2
-player_y = 1080 // 2
-player_radius = 25
-player_color = (0, 100, 255)
+class GameUI():
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            raise SystemExit
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((1920, 1080))
+        self.ice = (204, 255, 255)
+        self.clock = pygame.time.Clock()
 
-    ice = (204, 255, 255)
-    screen.fill(ice)
+        self.player_x = 1920 // 2
+        self.player_y = 1080 // 2
+        self.player_radius = 25
+        self.player_color = (0, 100, 255)
 
-    pygame.draw.circle(
-        screen,
-        player_color,
-        (player_x, player_y),
-        player_radius
-    )
+        self.running = True
 
-    pygame.display.flip()
-    clock.tick(60)
+    async def events(self, peer):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                await self.motion(peer, x, y)
+
+    def draw(self):
+        self.screen.fill(self.ice)
+
+        pygame.draw.circle(
+            self.screen,
+            self.player_color,
+            (self.player_x, self.player_y),
+            self.player_radius
+        )
+
+        pygame.display.flip()
+
+
+
+    async def motion(self, peer, x,y):
+
+        await peer.submit_player_input(peer.peer_id, x, y)
+
+                
+
+
+
+    async def run(self, peer):
+        while self.running:
+            await self.events(peer)
+            self.draw()
+            self.clock.tick(60)
+            await asyncio.sleep(0)
+
+        pygame.quit()
+
+

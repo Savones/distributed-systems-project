@@ -5,6 +5,7 @@ import json
 from websockets.asyncio.client import connect
 from websockets.asyncio.server import serve
 
+from ui import GameUI
 
 SERVER_URI = "ws://127.0.0.1:8000"
 
@@ -16,6 +17,7 @@ class Peer:
         self.peer_id = None
         self.room_id = None
         self.role = None  # leader, follower
+        self.ui = GameUI()
 
         self.peers = []
         self.status = "connecting"
@@ -65,20 +67,17 @@ class Peer:
 
         print("-" * 60, flush=True)
 
-    async def send_test_inputs(self, websocket):
-        while True:
-            await asyncio.sleep(2)
 
-            await websocket.send(json.dumps({
-                "action": "input",
-                "input": "move_right",
-            }))
-            self.log("Sent input to leader: move_right")
+    async def submit_player_input(self, id, x, y): 
+        print("submit player input", x,y,id)
 
-    async def test_leader_inputs(self):
-        while True:
-            await asyncio.sleep(2)
-            await self.handle_player_input(self.peer_id, "move_right")
+        #player_input = {
+        #    "x": x,
+         #   "y": y
+        #}
+
+        #await self.handle_player_input(id, player_input)
+
 
     def process_input(self, peer_id, player_input):
         player = self.game_state["players"][str(peer_id)]
@@ -86,8 +85,8 @@ class Peer:
         if player["state"] != "playing":
             return
 
-        if player_input == "move_right":
-            player["x"] += 10
+        player["x"] = player_input["x"]
+        player["y"] = player_input["y"]
 
     def add_player(self, peer_id):
         self.game_state["players"][str(peer_id)] = {
@@ -179,8 +178,7 @@ class Peer:
 
             if peer["role"] == "leader":
                 await asyncio.gather(
-                    self.receive_messages(websocket),
-                    self.send_test_inputs(websocket),
+                    self.receive_messages(websocket)
                 )
             else:
                 await self.receive_messages(websocket)
@@ -211,15 +209,15 @@ class Peer:
                     f"Joined room {self.room_id} "
                     f"at {self.host}:{self.port}"
                 )
-
+                tasks = [self.receive_messages(websocket)]
                 if self.role == "leader":
                     self.add_player(self.peer_id)
                     self.print_game_state()
+                    tasks.append(self.ui.run(self))
 
-                tasks = [self.receive_messages(websocket)]
 
-                if self.role == "leader":
-                    tasks.append(self.test_leader_inputs())
+
+
 
                 for peer in self.peers:
                     tasks.append(self.connect_to_peer(peer))
