@@ -1,17 +1,26 @@
 import asyncio
 import pygame
 
+ICE_COLOR = (204, 255, 255)
+PLAYER_COLORS = [
+    (0, 100, 255),
+    (255, 100, 100),
+    (100, 255, 100),
+]
+
+SCREEN_WIDTH = 500
+SCREEN_HEIGHT = 500
+
 
 class GameUI():
 
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((500, 500))
-        self.ice = (204, 255, 255)
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
 
-        self.player_x = 500 // 2
-        self.player_y = 500 // 2
+        self.player_x = SCREEN_WIDTH // 2
+        self.player_y = SCREEN_HEIGHT // 2
         self.player_radius = 25
         self.player_color = (0, 100, 255)
 
@@ -27,17 +36,13 @@ class GameUI():
                 await self.motion(peer, x, y)
 
     def draw(self, peer):
-        self.screen.fill(self.ice)
+        self.screen.fill(ICE_COLOR)
 
         for peer_id, player in peer.game_state["players"].items():
             if player["state"] != "playing":
                 continue
 
-            color = (
-                self.player_color
-                if peer_id == str(peer.peer_id)
-                else (255, 100, 100)
-            )
+            color = PLAYER_COLORS[(int(peer_id) - 1) % len(PLAYER_COLORS)]
 
             pygame.draw.circle(
                 self.screen,
