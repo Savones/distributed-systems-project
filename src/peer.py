@@ -17,6 +17,7 @@ class Peer:
         self.peer_id = None
         self.room_id = None
         self.role = None  # leader, follower
+        self.leader = None  # leader peer info
         self.ui = GameUI()
 
         self.peers = []
@@ -67,8 +68,17 @@ class Peer:
 
         print("-" * 60, flush=True)
 
-    async def submit_player_input(self, id, x, y):
-        print("submit player input", x, y, id)
+    async def submit_player_input(self, peer_id, x, y):
+        player_input = {"x": x, "y": y}
+
+        if self.role == "leader":
+            await self.handle_player_input(self.peer_id, player_input)
+
+        elif self.leader is not None:
+            await self.leader.send(json.dumps({
+                "action": "input",
+                "input": player_input,
+            }))
 
     def process_input(self, peer_id, player_input):
         player = self.game_state["players"][str(peer_id)]
@@ -168,6 +178,7 @@ class Peer:
             }))
 
             if peer["role"] == "leader":
+                self.leader = websocket
                 await asyncio.gather(
                     self.receive_messages(websocket)
                 )
@@ -204,7 +215,8 @@ class Peer:
                 if self.role == "leader":
                     self.add_player(self.peer_id)
                     self.print_game_state()
-                    tasks.append(self.ui.run(self))
+
+                tasks.append(self.ui.run(self))
 
                 for peer in self.peers:
                     tasks.append(self.connect_to_peer(peer))
