@@ -2,7 +2,17 @@ import asyncio
 import pygame
 import math
 
-from variables import SCREEN_WIDTH, SCREEN_HEIGHT, ICE_COLOR, PLAYER_COLORS, BEAK_COLOR, BEAK_SIZE, PLAYER_RADIUS
+from variables import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    ICE_COLOR,
+    PLAYER_COLORS,
+    BEAK_COLOR,
+    BEAK_SIZE,
+    PLAYER_RADIUS,
+    SNOWBALL_RADIUS,
+    SNOWBALL_COLOR
+)
 
 
 class GameUI():
@@ -62,6 +72,13 @@ class GameUI():
             ]
 
             pygame.draw.polygon(self.screen, BEAK_COLOR, rotated_points)
+
+        pygame.draw.circle(
+            self.screen,
+            SNOWBALL_COLOR,
+            (100, 100),
+            SNOWBALL_RADIUS,
+        )
 
         pygame.display.flip()
 
