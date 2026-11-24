@@ -8,6 +8,8 @@ from websockets.asyncio.server import serve
 from game import Game
 from ui import GameUI
 
+from variables import GAME_TICK_RATE
+
 
 SERVER_URI = "ws://127.0.0.1:8000"
 
@@ -104,41 +106,17 @@ class Peer:
             elif data["action"] == "update":
                 if self.role == "follower":
                     self.game.state = data["game_state"]
-                    self.log(
-                        f"Received update "
-                        f"#{self.game.state['sequence_number']}"
-                    )
-                    self.print_game_state()
 
     async def handle_player_input(self, peer_id, player_input):
-        source = (
-            "own player"
-            if peer_id == self.peer_id
-            else f"peer {peer_id}"
-        )
-        self.log(f"Processing input from {source}: {player_input}")
-
         self.game.process_input(peer_id, player_input)
-        self.game.state["sequence_number"] += 1
-        await self.broadcast_game_state()
 
     async def broadcast_game_state(self):
-        sequence_number = self.game.state["sequence_number"]
-
         message = json.dumps({
             "action": "update",
             "game_state": self.game.state,
         })
 
-        connections = list(self.connections.values())
-
-        self.log(
-            f"Broadcasting update #{sequence_number} "
-            f"to {len(connections)} peer(s)"
-        )
-        self.print_game_state()
-
-        for websocket in connections:
+        for websocket in list(self.connections.values()):
             await websocket.send(message)
 
     async def connect_to_peer(self, peer):
@@ -159,6 +137,22 @@ class Peer:
                 self.leader = websocket
 
             await self.receive_messages(websocket)
+
+    async def game_loop(self):
+        loop = asyncio.get_running_loop()
+        previous_time = loop.time()
+
+        while self.role == "leader":
+            await asyncio.sleep(1 / GAME_TICK_RATE)
+
+            current_time = loop.time()
+
+            dt = min(current_time - previous_time, 0.1)
+            previous_time = current_time
+
+            self.game.update(dt)
+            self.game.state["sequence_number"] += 1
+            await self.broadcast_game_state()
 
     async def run(self):
         async with serve(self.receive_messages, self.host, self.port):
@@ -196,6 +190,9 @@ class Peer:
                     self.receive_messages(websocket),
                     self.ui.run(self),
                 ]
+
+                if self.role == "leader":
+                    tasks.append(self.game_loop())
 
                 for peer in self.peers:
                     tasks.append(self.connect_to_peer(peer))
