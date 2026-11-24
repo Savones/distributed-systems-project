@@ -6,6 +6,7 @@ from websockets.asyncio.client import connect
 from websockets.asyncio.server import serve
 
 from ui import GameUI
+from variables import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS
 
 SERVER_URI = "ws://127.0.0.1:8000"
 
@@ -86,8 +87,30 @@ class Peer:
         if player["state"] != "playing":
             return
 
-        player["x"] = player_input["x"]
-        player["y"] = player_input["y"]
+        x = max(
+            PLAYER_RADIUS,
+            min(player_input["x"], SCREEN_WIDTH - PLAYER_RADIUS),
+        )
+
+        y = max(
+            PLAYER_RADIUS,
+            min(player_input["y"], SCREEN_HEIGHT - PLAYER_RADIUS),
+        )
+
+        for other_id, other in self.game_state["players"].items():
+            if other_id == str(peer_id) or other["state"] != "playing":
+                continue
+
+            distance_squared = (
+                (x - other["x"]) ** 2
+                + (y - other["y"]) ** 2
+            )
+
+            if distance_squared < (PLAYER_RADIUS * 2) ** 2:
+                return
+
+        player["x"] = x
+        player["y"] = y
 
     def add_player(self, peer_id):
         self.game_state["players"][str(peer_id)] = {

@@ -1,15 +1,7 @@
 import asyncio
 import pygame
 
-ICE_COLOR = (204, 255, 255)
-PLAYER_COLORS = [
-    (0, 100, 255),
-    (255, 100, 100),
-    (100, 255, 100),
-]
-
-SCREEN_WIDTH = 500
-SCREEN_HEIGHT = 500
+from variables import SCREEN_WIDTH, SCREEN_HEIGHT, ICE_COLOR, PLAYER_COLORS, PLAYER_RADIUS
 
 
 class GameUI():
@@ -21,8 +13,6 @@ class GameUI():
 
         self.player_x = SCREEN_WIDTH // 2
         self.player_y = SCREEN_HEIGHT // 2
-        self.player_radius = 25
-        self.player_color = (0, 100, 255)
 
         self.running = True
 
@@ -48,7 +38,7 @@ class GameUI():
                 self.screen,
                 color,
                 (int(player["x"]), int(player["y"])),
-                self.player_radius,
+                PLAYER_RADIUS,
             )
 
         pygame.display.flip()
