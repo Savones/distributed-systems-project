@@ -1,6 +1,6 @@
 import math
 
-from variables import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, PLAYER_SPEED, BEAK_ROTATION_SPEED
+from variables import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, PLAYER_SPEED, BEAK_ROTATION_SPEED, BEAK_SIZE, SNOWBALL_RADIUS, SNOWBALL_SPEED
 
 
 class Game:
@@ -24,6 +24,10 @@ class Game:
         }
 
     def process_input(self, peer_id, player_input):
+        if player_input.get("type") == "shoot":
+            self.shoot(peer_id)
+            return
+
         player = self.state["players"][str(peer_id)]
 
         if player["state"] != "playing":
@@ -52,6 +56,33 @@ class Game:
                 return False
 
         return True
+
+    def shoot(self, peer_id):
+        player_id = str(peer_id)
+        player = self.state["players"][player_id]
+
+        if player["state"] != "playing":
+            return
+
+        if any(
+            ball["owner_id"] == player_id
+            for ball in self.state["snowballs"]
+        ):
+            return
+
+        angle = math.radians(player["angle"])
+        direction_x = math.cos(angle)
+        direction_y = math.sin(angle)
+
+        offset = PLAYER_RADIUS + BEAK_SIZE + SNOWBALL_RADIUS
+
+        self.state["snowballs"].append({
+            "owner_id": player_id,
+            "x": player["x"] + direction_x * offset,
+            "y": player["y"] + direction_y * offset,
+            "direction_x": direction_x,
+            "direction_y": direction_y,
+        })
 
     def update(self, dt):
         for peer_id, player in self.state["players"].items():

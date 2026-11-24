@@ -80,6 +80,18 @@ class Peer:
                 "input": player_input,
             }))
 
+    async def submit_shoot_input(self):
+        player_input = {"type": "shoot"}
+
+        if self.role == "leader":
+            await self.handle_player_input(self.peer_id, player_input)
+
+        elif self.leader is not None:
+            await self.leader.send(json.dumps({
+                "action": "input",
+                "input": player_input,
+            }))
+
     async def receive_messages(self, websocket):
         sender_id = None
 

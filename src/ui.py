@@ -36,6 +36,10 @@ class GameUI():
                 x, y = event.pos
                 await self.motion(peer, x, y)
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    await peer.submit_shoot_input()
+
     def draw(self, peer):
         self.screen.fill(ICE_COLOR)
 
@@ -73,12 +77,13 @@ class GameUI():
 
             pygame.draw.polygon(self.screen, BEAK_COLOR, rotated_points)
 
-        pygame.draw.circle(
-            self.screen,
-            SNOWBALL_COLOR,
-            (100, 100),
-            SNOWBALL_RADIUS,
-        )
+        for ball in peer.game.state["snowballs"]:
+            pygame.draw.circle(
+                self.screen,
+                SNOWBALL_COLOR,
+                (round(ball["x"]), round(ball["y"])),
+                SNOWBALL_RADIUS,
+            )
 
         pygame.display.flip()
 
