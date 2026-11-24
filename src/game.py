@@ -88,17 +88,50 @@ class Game:
         remaining = []
 
         for ball in self.state["snowballs"]:
-            ball["x"] += ball["direction_x"] * SNOWBALL_SPEED * dt
-            ball["y"] += ball["direction_y"] * SNOWBALL_SPEED * dt
+            movement = SNOWBALL_SPEED * dt
 
-            touches_boundary = (
-                ball["x"] - SNOWBALL_RADIUS <= 0
-                or ball["x"] + SNOWBALL_RADIUS >= SCREEN_WIDTH
-                or ball["y"] - SNOWBALL_RADIUS <= 0
-                or ball["y"] + SNOWBALL_RADIUS >= SCREEN_HEIGHT
-            )
+            # Small steps help prevent jumping through a player.
+            steps = max(1, math.ceil(movement / SNOWBALL_RADIUS))
+            step_distance = movement / steps
+            removed = False
 
-            if not touches_boundary:
+            for _ in range(steps):
+                ball["x"] += ball["direction_x"] * step_distance
+                ball["y"] += ball["direction_y"] * step_distance
+
+                touches_boundary = (
+                    ball["x"] - SNOWBALL_RADIUS <= 0
+                    or ball["x"] + SNOWBALL_RADIUS >= SCREEN_WIDTH
+                    or ball["y"] - SNOWBALL_RADIUS <= 0
+                    or ball["y"] + SNOWBALL_RADIUS >= SCREEN_HEIGHT
+                )
+
+                if touches_boundary:
+                    removed = True
+                    break
+
+                for player_id, player in self.state["players"].items():
+                    if player_id == ball["owner_id"]:
+                        continue
+
+                    if player["state"] != "playing":
+                        continue
+
+                    distance_squared = (
+                        (ball["x"] - player["x"]) ** 2
+                        + (ball["y"] - player["y"]) ** 2
+                    )
+
+                    hit_distance = PLAYER_RADIUS + SNOWBALL_RADIUS
+
+                    if distance_squared <= hit_distance ** 2:
+                        removed = True
+                        break
+
+                if removed:
+                    break
+
+            if not removed:
                 remaining.append(ball)
 
         self.state["snowballs"] = remaining
