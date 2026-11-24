@@ -28,7 +28,7 @@ class GameUI():
     def draw(self, peer):
         self.screen.fill(ICE_COLOR)
 
-        for peer_id, player in peer.game_state["players"].items():
+        for peer_id, player in peer.game.state["players"].items():
             if player["state"] != "playing":
                 continue
 
