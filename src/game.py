@@ -84,7 +84,28 @@ class Game:
             "direction_y": direction_y,
         })
 
+    def update_snowballs(self, dt):
+        remaining = []
+
+        for ball in self.state["snowballs"]:
+            ball["x"] += ball["direction_x"] * SNOWBALL_SPEED * dt
+            ball["y"] += ball["direction_y"] * SNOWBALL_SPEED * dt
+
+            touches_boundary = (
+                ball["x"] - SNOWBALL_RADIUS <= 0
+                or ball["x"] + SNOWBALL_RADIUS >= SCREEN_WIDTH
+                or ball["y"] - SNOWBALL_RADIUS <= 0
+                or ball["y"] + SNOWBALL_RADIUS >= SCREEN_HEIGHT
+            )
+
+            if not touches_boundary:
+                remaining.append(ball)
+
+        self.state["snowballs"] = remaining
+
     def update(self, dt):
+        self.update_snowballs(dt)
+
         for peer_id, player in self.state["players"].items():
             if player["state"] != "playing":
                 continue
