@@ -1,6 +1,6 @@
 import math
 
-from variables import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, PLAYER_SPEED
+from variables import SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_RADIUS, PLAYER_SPEED, BEAK_ROTATION_SPEED
 
 
 class Game:
@@ -17,6 +17,7 @@ class Game:
             "y": 100,
             "target_x": 100,
             "target_y": 100,
+            "angle": 0.0,
             "hearts": 3,
             "score": 0,
             "state": "playing",
@@ -56,6 +57,10 @@ class Game:
         for peer_id, player in self.state["players"].items():
             if player["state"] != "playing":
                 continue
+
+            player["angle"] = (
+                player["angle"] + BEAK_ROTATION_SPEED * dt
+            ) % 360
 
             dx = player["target_x"] - player["x"]
             dy = player["target_y"] - player["y"]

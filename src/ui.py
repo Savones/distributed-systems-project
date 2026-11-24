@@ -1,7 +1,8 @@
 import asyncio
 import pygame
+import math
 
-from variables import SCREEN_WIDTH, SCREEN_HEIGHT, ICE_COLOR, PLAYER_COLORS, PLAYER_RADIUS
+from variables import SCREEN_WIDTH, SCREEN_HEIGHT, ICE_COLOR, PLAYER_COLORS, BEAK_COLOR, BEAK_SIZE, PLAYER_RADIUS
 
 
 class GameUI():
@@ -40,6 +41,27 @@ class GameUI():
                 (int(player["x"]), int(player["y"])),
                 PLAYER_RADIUS,
             )
+
+            angle = math.radians(player["angle"])
+
+            cos_angle = math.cos(angle)
+            sin_angle = math.sin(angle)
+
+            points = [
+                (PLAYER_RADIUS, -BEAK_SIZE / 2),
+                (PLAYER_RADIUS + BEAK_SIZE, 0),
+                (PLAYER_RADIUS, BEAK_SIZE / 2),
+            ]
+
+            rotated_points = [
+                (
+                    player["x"] + x * cos_angle - y * sin_angle,
+                    player["y"] + x * sin_angle + y * cos_angle,
+                )
+                for x, y in points
+            ]
+
+            pygame.draw.polygon(self.screen, BEAK_COLOR, rotated_points)
 
         pygame.display.flip()
 
